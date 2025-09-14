@@ -28,12 +28,12 @@ public class Contrato {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contratante_id", nullable = false)
-    private Membro membro_1;
+    private Membro membro1;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contratado_id", nullable = false)
-    private Membro membro_2;
+    private Membro membro2;
 
     @NotNull
     @PastOrPresent(message = "A data do contrato não pode ser no futuro.")

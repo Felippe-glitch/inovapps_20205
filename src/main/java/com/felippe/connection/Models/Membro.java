@@ -31,6 +31,7 @@ public class Membro {
     @Column(name = "id_membro")
     private Long id;
 
+    // --- DADOS PRINCIPAIS E CREDENCIAIS ---
     @NotBlank
     @Size(min = 3, max = 255)
     @Column(nullable = false)
@@ -47,8 +48,7 @@ public class Membro {
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
-    // --- CAMPOS MANTIDOS CONFORME SOLICITADO ---
-
+    // --- CONTADORES MANUAIS (Gerenciados pelo Service) ---
     @Builder.Default
     @Column(name = "negocios_fechados", nullable = false)
     private int negociosFechados = 0;
@@ -61,8 +61,7 @@ public class Membro {
     @Column(name = "contratos_totais", nullable = false)
     private int contratosTotais = 0;
 
-    // --- DEMAIS CAMPOS DO PERFIL ---
-
+    // --- DADOS DO PERFIL ---
     @URL(message = "A URL da foto é inválida.")
     @Column(name = "foto_url")
     private String fotoUrl;
@@ -72,7 +71,7 @@ public class Membro {
     private LocalDate dataNascimento;
 
     @Column(name = "endereco", length = 200)
-    private String local;
+    private String endereco; // Renomeado de 'local' para mais clareza
 
     @Column(name = "tempo_atuacao", length = 50)
     private String tempoAtuacao;
@@ -88,8 +87,9 @@ public class Membro {
     @Column(columnDefinition = "TEXT")
     private String hobbies;
     
-    // ... outros campos como links de redes sociais, etc. ...
+    // ... outros campos ...
 
+    // --- DADOS DE CONTROLE DO SISTEMA ---
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_membro", length = 20)
     private MembroType tipoMembro;
@@ -107,8 +107,7 @@ public class Membro {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
 
-    // --- RELACIONAMENTOS ---
-
+    // --- RELACIONAMENTOS COMPLETOS ---
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<MarcaHasMembro> marcasAssociadas = new HashSet<>();
@@ -116,4 +115,30 @@ public class Membro {
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<EmpresaHasMembro> empresasAssociadas = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<SetorHasMembro> setoresAssociados = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "membro1", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Contrato> contratosComoContratante = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "membro2", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Contrato> contratosComoContratado = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Faturamento> faturamentos = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "indicador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Indicacao> indicacoesFeitas = new HashSet<>();
+    
+    @Builder.Default
+    @OneToMany(mappedBy = "indicado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<Indicacao> indicacoesRecebidas = new HashSet<>();
+
+    
 }

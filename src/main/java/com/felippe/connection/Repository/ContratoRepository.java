@@ -12,6 +12,8 @@ import com.felippe.connection.Models.Membro;
 
 @Repository
 public interface ContratoRepository extends JpaRepository<Contrato, Long> {
-    @Query("SELECT c FROM Contrato c WHERE c.membro_1 = :membro OR c.membro_2 = :membro ORDER BY c.dataContrato DESC")
+    @Query("SELECT c FROM Contrato c WHERE c.membro1 = :membro OR c.membro2 = :membro ORDER BY c.dataContrato DESC")
     List<Contrato> findAllByParticipante(@Param("membro") Membro membro);
+
+    List<Contrato> findByMembro1OrMembro2(Membro membro1, Membro membro2);
 }
