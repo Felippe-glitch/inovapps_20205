@@ -1,92 +1,91 @@
 package com.felippe.connection.Service;
 
-import com.felippe.connection.DTO.EmpresaAssociacaoDTO;
 import com.felippe.connection.DTO.MembroDTO;
+import com.felippe.connection.DTO.MembroResponseDTO;
 import com.felippe.connection.Models.*;
 import com.felippe.connection.Models.ENUMS.MembroStatus;
+import com.felippe.connection.Models.ENUMS.MembroType;
 import com.felippe.connection.Repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.List;
 
 @Service
 public class MembroService {
 
-    // --- DEPENDÊNCIAS ---
+    // --- DEPENDÊNCIAS (Injeção via construtor está correta) ---
     private final MembroRepository membroRepository;
     private final MarcaRepository marcaRepository;
-    private final MarcaHasMembroRepository marcaHasMembroRepository;
     private final EmpresaRepository empresaRepository;
-    private final EmpresaHasMembroRepository empresaHasMembroRepository;
     private final SetorRepository setorRepository;
+    private final IndicacaoRepository indicacaoRepository;
+    private final MarcaHasMembroRepository marcaHasMembroRepository;
+    private final EmpresaHasMembroRepository empresaHasMembroRepository;
     private final SetorHasMembroRepository setorHasMembroRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // --- CONSTRUTOR COMPLETO ---
-    public MembroService(MembroRepository membroRepository,
-            MarcaRepository marcaRepository,
-            MarcaHasMembroRepository marcaHasMembroRepository,
-            EmpresaRepository empresaRepository,
-            EmpresaHasMembroRepository empresaHasMembroRepository,
-            SetorRepository setorRepository,
-            SetorHasMembroRepository setorHasMembroRepository,
-            PasswordEncoder passwordEncoder) {
-        this.membroRepository = membroRepository;
-        this.marcaRepository = marcaRepository;
-        this.marcaHasMembroRepository = marcaHasMembroRepository;
-        this.empresaRepository = empresaRepository;
-        this.empresaHasMembroRepository = empresaHasMembroRepository;
-        this.setorRepository = setorRepository;
-        this.setorHasMembroRepository = setorHasMembroRepository;
-        this.passwordEncoder = passwordEncoder;
+    public MembroService(MembroRepository m, MarcaRepository ma, EmpresaRepository e, SetorRepository s, IndicacaoRepository i, MarcaHasMembroRepository mhm, EmpresaHasMembroRepository ehm, SetorHasMembroRepository shm, PasswordEncoder pe) {
+        this.membroRepository = m; this.marcaRepository = ma; this.empresaRepository = e; this.setorRepository = s; this.indicacaoRepository = i; this.marcaHasMembroRepository = mhm; this.empresaHasMembroRepository = ehm; this.setorHasMembroRepository = shm; this.passwordEncoder = pe;
     }
 
-    // --- CRUD BÁSICO ---
+    // --- OPERAÇÕES PÚBLICAS (A "API" DO SEU SERVICE) ---
 
     /**
-     * CREATE: Cria um novo membro com senha criptografada.
+     * CREATE: Cria um membro completo a partir de um DTO.
      */
     @Transactional
-    public Membro criarMembro(Membro membro) {
-        if (membroRepository.findByEmail(membro.getEmail()).isPresent()) {
+    public MembroResponseDTO criarMembro(MembroDTO dto) {
+        if (membroRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("O e-mail informado já está em uso.");
         }
-        membro.setSenha(passwordEncoder.encode(membro.getSenha()));
-        return membroRepository.save(membro);
-    }
+        
+        Membro novoMembro = new Membro();
+        mapearCreateDtoParaEntidade(dto, novoMembro); // Usa o método auxiliar
+        
+        novoMembro.setSenha(passwordEncoder.encode(dto.getSenha()));
+        novoMembro.setStatus(MembroStatus.ATIVO);
+        novoMembro.setTipoMembro(MembroType.SOCIO);
 
+        Membro membroSalvo = membroRepository.save(novoMembro);
+
+        // Associações
+        if (dto.getIdsMarcas() != null) {
+            dto.getIdsMarcas().forEach(id -> adicionarMarcaAoMembro(membroSalvo, id));
+        }
+        if (dto.getIdsEmpresas() != null) {
+            dto.getIdsEmpresas().forEach(id -> adicionarEmpresaAoMembro(membroSalvo, id));
+        }
+        if (dto.getIdsSetores() != null) {
+            dto.getIdsSetores().forEach(id -> adicionarSetorAoMembro(membroSalvo, id));
+        }
+        
+        return convertToResponseDTO(membroSalvo);
+    }
+    
     /**
-     * READ ALL: Busca todos os membros de forma paginada.
+     * READ ALL: Busca todos os membros de forma paginada e retorna como DTO.
      */
     @Transactional(readOnly = true)
-    public Page<Membro> listarTodos(Pageable pageable) {
-        return membroRepository.findAll(pageable);
+    public List<MembroResponseDTO> listarTodos() {
+        return membroRepository.findAll().stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
     }
-
+    
     /**
-     * READ ONE: Busca um membro específico pelo seu ID.
+     * READ ONE: Busca um perfil completo de membro e retorna como DTO.
      */
     @Transactional(readOnly = true)
-    public Membro buscarPorId(Long id) {
-        return membroRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Membro não encontrado com o ID: " + id));
+    public MembroResponseDTO buscarPerfilPorId(Long id) {
+        Membro membro = buscarEntidadePorId(id);
+        return convertToResponseDTO(membro);
     }
-
-    /**
-     * UPDATE: Atualiza os dados do perfil de um membro existente.
-     */
-    @Transactional
-    public Membro atualizarPerfil(Long id, Membro membroDetails) {
-        Membro membroExistente = buscarPorId(id);
-        membroExistente.setNome(membroDetails.getNome());
-        membroExistente.setFotoUrl(membroDetails.getFotoUrl());
-        membroExistente.setEndereco(membroDetails.getEndereco());
-        membroExistente.setHobbies(membroDetails.getHobbies());
-        // ... outros campos que o usuário pode atualizar no perfil
-        return membroRepository.save(membroExistente);
-    }
+    
 
     /**
      * DELETE: Deleta um membro pelo seu ID.
@@ -99,143 +98,87 @@ public class MembroService {
         membroRepository.deleteById(id);
     }
 
-    // --- LÓGICA DE ASSOCIAÇÃO ---
+    // --- MÉTODOS AUXILIARES (PRIVADOS) ---
 
-    /**
-     * Associa um membro a uma Marca. Se a Marca não existir, ela é criada.
-     */
-    @Transactional
-    public void adicionarMarcaAoMembro(Long membroId, String nomeMarca) {
-        Membro membro = buscarPorId(membroId);
-        Marca marca = marcaRepository.findByNomeIgnoreCase(nomeMarca.trim())
-                .orElseGet(() -> {
-                    Marca novaMarca = new Marca();
-                    novaMarca.setNome(nomeMarca.trim());
-                    return marcaRepository.save(novaMarca);
-                });
-
-        if (marcaHasMembroRepository.existsByMembroAndMarca(membro, marca)) {
-            throw new IllegalArgumentException("Este membro já está associado a esta marca.");
-        }
-
-        MarcaHasMembro novaAssociacao = new MarcaHasMembro();
-        novaAssociacao.setMembro(membro);
-        // ✅ CORREÇÃO: Adicione esta linha para ligar a associação à marca.
-        novaAssociacao.setMarca(marca);
-
-        membro.getMarcasAssociadas().add(novaAssociacao);
-        membroRepository.save(membro);
+    private Membro buscarEntidadePorId(Long id) {
+        return membroRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Membro não encontrado com o ID: " + id));
     }
 
-    /**
-     * Associa um membro a uma Empresa (que deve ser pré-cadastrada).
-     */
-    // ...
-    // ...
-    @Transactional
-    public void adicionarEmpresaAoMembro(Long membroId, EmpresaAssociacaoDTO dto) {
-        Membro membro = buscarPorId(membroId);
-        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
-                .orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + dto.getEmpresaId()));
-
-        if (empresaHasMembroRepository.existsByMembroAndEmpresa(membro, empresa)) {
-            throw new IllegalArgumentException("Este membro já está associado a esta empresa.");
+    private void adicionarMarcaAoMembro(Membro membro, Long marcaId) {
+        Marca marca = marcaRepository.findById(marcaId).orElseThrow(() -> new RuntimeException("Marca não encontrada com ID: " + marcaId));
+        if (!marcaHasMembroRepository.existsByMembroAndMarca(membro, marca)) {
+            MarcaHasMembro assoc = new MarcaHasMembro();
+            assoc.setMembro(membro);
+            assoc.setMarca(marca);
+            membro.getMarcasAssociadas().add(assoc);
         }
-
-        EmpresaHasMembro novaAssociacao = new EmpresaHasMembro();
-        novaAssociacao.setMembro(membro);
-        novaAssociacao.setEmpresa(empresa);
-        // ✅ LINHA "novaAssociacao.setCargo(...)" REMOVIDA
-
-        membro.getEmpresasAssociadas().add(novaAssociacao);
-        membroRepository.save(membro);
-    }
-    // ...
-    // ...
-
-    /**
-     * Associa um membro a um Setor (que deve ser pré-cadastrado).
-     * ESTE É O MÉTODO CORRETO PARA USAR.
-     */
-    @Transactional
-    public void adicionarSetorAoMembro(Long membroId, Long setorId) {
-        // 1. Busca o membro que receberá a associação.
-        Membro membro = buscarPorId(membroId);
-
-        // 2. BUSCA o setor que já existe no banco pelo ID.
-        // Ele NÃO cria um novo setor.
-        Setor setor = setorRepository.findById(setorId)
-                .orElseThrow(() -> new RuntimeException("Setor não encontrado com ID: " + setorId));
-
-        // 3. Verifica se a associação já não foi feita.
-        if (setorHasMembroRepository.existsByMembroAndSetor(membro, setor)) {
-            throw new IllegalArgumentException("Este membro já está associado a este setor.");
-        }
-
-        // 4. CRIA APENAS A ASSOCIAÇÃO na tabela 'setores_has_membros'.
-        SetorHasMembro novaAssociacao = new SetorHasMembro();
-        novaAssociacao.setMembro(membro);
-        novaAssociacao.setSetor(setor); // Usa o setor que foi encontrado.
-
-        // 5. Adiciona a associação à lista do membro e salva.
-        // O JPA/Hibernate cuidará de inserir a linha na tabela de junção.
-        membro.getSetoresAssociados().add(novaAssociacao);
-        membroRepository.save(membro);
     }
 
-    @Transactional
-    public Membro criarCadastroCompleto(MembroDTO dto) {
-        // 1. Valida e cria o membro básico
-        if (membroRepository.findByEmail(dto.getEmail()).isPresent()) {
-            throw new IllegalArgumentException("O e-mail informado já está em uso.");
+    private void adicionarEmpresaAoMembro(Membro membro, Long empresaId) {
+        Empresa empresa = empresaRepository.findById(empresaId).orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + empresaId));
+        if (!empresaHasMembroRepository.existsByMembroAndEmpresa(membro, empresa)) {
+            EmpresaHasMembro assoc = new EmpresaHasMembro();
+            assoc.setMembro(membro);
+            assoc.setEmpresa(empresa);
+            membro.getEmpresasAssociadas().add(assoc);
         }
-
-        Membro novoMembro = new Membro();
-        novoMembro.setNome(dto.getNome());
-        novoMembro.setEmail(dto.getEmail());
-        novoMembro.setSenha(passwordEncoder.encode(dto.getSenha()));
-
-        // 2. Preenche os dados do perfil
-        novoMembro.setFotoUrl(dto.getFotoUrl());
-        novoMembro.setDataNascimento(dto.getDataNascimento());
-        novoMembro.setEndereco(dto.getEndereco());
-        novoMembro.setTempoAtuacao(dto.getTempoAtuacao());
-        novoMembro.setPrincipaisResultados(dto.getPrincipaisResultados());
-        novoMembro.setPossuiFilhos(dto.getPossuiFilhos());
-        novoMembro.setHobbies(dto.getHobbies());
-
-        // Define valores padrão do sistema
-        novoMembro.setStatus(MembroStatus.ATIVO);
-
-        // 3. Salva o membro para obter um ID
-        Membro membroSalvo = membroRepository.save(novoMembro);
-
-        // 4. Processa e adiciona as associações
-        // Marcas (com lógica de encontrar ou criar)
-        if (dto.getNomesMarcas() != null) {
-            for (String nomeMarca : dto.getNomesMarcas()) {
-                adicionarMarcaAoMembro(membroSalvo.getId(), nomeMarca);
-            }
-        }
-
-        // Empresas (apenas associa)
-        if (dto.getIdsEmpresas() != null) {
-            for (Long empresaId : dto.getIdsEmpresas()) {
-                adicionarEmpresaAoMembro(membroSalvo.getId(), new EmpresaAssociacaoDTO(empresaId));
-            }
-        }
-
-        // Setores (apenas associa)
-        if (dto.getIdsSetores() != null) {
-            for (Long setorId : dto.getIdsSetores()) {
-                adicionarSetorAoMembro(membroSalvo.getId(), setorId);
-            }
-        }
-
-        // 5. Retorna a versão final do membro com todas as associações
-        // É importante buscar novamente para garantir que todos os dados estejam
-        // carregados
-        return buscarPorId(membroSalvo.getId());
     }
 
+    private void adicionarSetorAoMembro(Membro membro, Long setorId) {
+        Setor setor = setorRepository.findById(setorId).orElseThrow(() -> new RuntimeException("Setor não encontrado com ID: " + setorId));
+        if (!setorHasMembroRepository.existsByMembroAndSetor(membro, setor)) {
+            SetorHasMembro assoc = new SetorHasMembro();
+            assoc.setMembro(membro);
+            assoc.setSetor(setor);
+            membro.getSetoresAssociados().add(assoc);
+        }
+    }
+
+    private void mapearCreateDtoParaEntidade(MembroDTO dto, Membro membro) {
+        membro.setNome(dto.getNome());
+        membro.setEmail(dto.getEmail());
+        membro.setFotoUrl(dto.getFotoUrl());
+        membro.setDataNascimento(dto.getDataNascimento());
+        membro.setPossuiFilhos(dto.getPossuiFilhos());
+        membro.setHobbies(dto.getHobbies());
+        membro.setLinkLinkedin(dto.getLinkLinkedin());
+        membro.setLinkSite(dto.getLinkSite());
+        membro.setInstagram(dto.getInstagram());
+        membro.setBio(dto.getBio());
+        if (dto.getFaturamento() != null) {
+            membro.setFaturamento(dto.getFaturamento());
+        }
+        if (dto.getNegociosFechados() != null) {
+            membro.setNegociosFechados(dto.getNegociosFechados());
+        }
+    }
+
+    private MembroResponseDTO convertToResponseDTO(Membro membro) {
+        MembroResponseDTO dto = new MembroResponseDTO();
+        dto.setId(membro.getId());
+        dto.setNome(membro.getNome());
+        dto.setEmail(membro.getEmail());
+        dto.setNegociosFechados(membro.getNegociosFechados());
+        dto.setFaturamento(membro.getFaturamento());
+        dto.setContratosTotais(membro.getContratosTotais());
+        dto.setFotoUrl(membro.getFotoUrl());
+        dto.setDataNascimento(membro.getDataNascimento());
+        dto.setPossuiFilhos(membro.getPossuiFilhos());
+        dto.setHobbies(membro.getHobbies());
+        dto.setLinkLinkedin(membro.getLinkLinkedin());
+        dto.setLinkSite(membro.getLinkSite());
+        dto.setInstagram(membro.getInstagram());
+        dto.setBio(membro.getBio());
+        dto.setTipoMembro(membro.getTipoMembro());
+        dto.setStatus(membro.getStatus());
+        dto.setCriadoEm(membro.getCriadoEm());
+        
+        dto.setNomesMarcas(membro.getMarcasAssociadas().stream().map(m -> m.getMarca().getNome()).collect(Collectors.toList()));
+        dto.setNomesEmpresas(membro.getEmpresasAssociadas().stream().map(e -> e.getEmpresa().getNomeEmpresa()).collect(Collectors.toList()));
+        dto.setNomesSetores(membro.getSetoresAssociados().stream().map(s -> s.getSetor().getNomeSetor()).collect(Collectors.toList()));
+        dto.setIndicacoesRecebidas(indicacaoRepository.countByIndicado(membro));
+        
+        return dto;
+    }
 }

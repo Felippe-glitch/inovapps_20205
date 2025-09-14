@@ -1,9 +1,12 @@
 package com.felippe.connection.Controllers;
 
 import com.felippe.connection.DTO.MembroDTO;
-import com.felippe.connection.Models.Membro;
+import com.felippe.connection.DTO.MembroResponseDTO;
 import com.felippe.connection.Service.MembroService;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,11 +22,15 @@ public class MembroController {
     }
 
     @PostMapping
-    public ResponseEntity<Membro> criarMembroCompleto(@Valid @RequestBody MembroDTO membroDTO) {
-        Membro membroSalvo = membroService.criarCadastroCompleto(membroDTO);
-        
+    public ResponseEntity<MembroResponseDTO> criarMembro(@Valid @RequestBody MembroDTO membroCreateDTO) {
+        MembroResponseDTO membroSalvoDTO = membroService.criarMembro(membroCreateDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(membroSalvoDTO);
+    }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(membroSalvo);
+    @GetMapping
+    public ResponseEntity<List<MembroResponseDTO>> listarTodos() {
+        List<MembroResponseDTO> membrosDTO = membroService.listarTodos();
+        return ResponseEntity.ok(membrosDTO);
     }
     
     @ExceptionHandler(RuntimeException.class)

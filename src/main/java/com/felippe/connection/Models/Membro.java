@@ -76,16 +76,6 @@ public class Membro {
     @Column(name = "data_nascimento")
     private LocalDate dataNascimento;
 
-    @Column(name = "endereco", length = 200)
-    private String endereco;
-
-    @Column(name = "tempo_atuacao", length = 50)
-    private String tempoAtuacao;
-
-    @Lob
-    @Column(name = "principais_resultados", columnDefinition = "TEXT")
-    private String principaisResultados;
-
     @Column(name = "possui_filhos")
     private Boolean possuiFilhos;
 
@@ -157,6 +147,11 @@ public class Membro {
     @OneToMany(mappedBy = "indicador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference("indicador-indicacoes")
     private Set<Indicacao> indicacoesFeitas = new HashSet<>();
+
+    @Lob 
+    @Size(max = 1000, message = "A biografia não pode exceder 1000 caracteres.")
+    @Column(name = "bio")
+    private String bio;
     
     @Builder.Default
     @OneToMany(mappedBy = "indicado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
