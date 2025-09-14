@@ -1,5 +1,7 @@
 package com.felippe.connection.Models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,6 +32,7 @@ public class MarcaHasMembro {
     private Marca marca;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JsonBackReference("membro-marcas")
     @JoinColumn(name = "membro_id", nullable = false)
     private Membro membro;
 

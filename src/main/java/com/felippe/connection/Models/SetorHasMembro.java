@@ -1,5 +1,7 @@
 package com.felippe.connection.Models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,5 +33,6 @@ public class SetorHasMembro {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "membro_id", nullable = false)
+    @JsonBackReference("membro-setores")
     private Membro membro;
 }

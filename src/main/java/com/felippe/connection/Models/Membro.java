@@ -17,6 +17,11 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Entidade central da aplicação, representando um Membro/Usuário.
+ * Atua como uma Raiz de Agregação (Aggregate Root), conectando-se
+ * a todas as outras entidades relacionadas.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,7 +51,7 @@ public class Membro {
     @NotBlank
     @Size(min = 8)
     @Column(nullable = false, length = 100)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY) // Impede que a senha seja enviada em respostas JSON
     private String senha;
 
     // --- CONTADORES MANUAIS (Gerenciados pelo Service) ---
@@ -72,7 +77,7 @@ public class Membro {
     private LocalDate dataNascimento;
 
     @Column(name = "endereco", length = 200)
-    private String endereco; // Renomeado de 'local' para mais clareza
+    private String endereco;
 
     @Column(name = "tempo_atuacao", length = 50)
     private String tempoAtuacao;
@@ -87,9 +92,18 @@ public class Membro {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String hobbies;
-    
-    // ... outros campos ...
 
+    @URL(message = "A URL do LinkedIn é inválida.")
+    @Column(name = "link_linkedin")
+    private String linkLinkedin;
+
+    @URL(message = "A URL do site é inválida.")
+    @Column(name = "link_site")
+    private String linkSite;
+
+    @Column(length = 50)
+    private String instagram;
+    
     // --- DADOS DE CONTROLE DO SISTEMA ---
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_membro", length = 20)
@@ -108,7 +122,7 @@ public class Membro {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
 
-    // --- RELACIONAMENTOS COMPLETOS ---
+    // --- RELACIONAMENTOS ---
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference("membro-marcas")
@@ -121,30 +135,31 @@ public class Membro {
     
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference("membro-setores")
     private Set<SetorHasMembro> setoresAssociados = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro1", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
-    private Set<Contrato> contratosComoContratante = new HashSet<>();
+    @JsonManagedReference("membro1-contratos")
+    private Set<Contrato> contratosComoMembro1 = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro2", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
-    private Set<Contrato> contratosComoContratado = new HashSet<>();
+    @JsonManagedReference("membro2-contratos")
+    private Set<Contrato> contratosComoMembro2 = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference("membro-faturamentos")
     private Set<Faturamento> faturamentos = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "indicador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference("indicador-indicacoes")
     private Set<Indicacao> indicacoesFeitas = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "indicado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @JsonManagedReference("indicado-indicacoes")
     private Set<Indicacao> indicacoesRecebidas = new HashSet<>();
 }

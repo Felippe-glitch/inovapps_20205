@@ -24,13 +24,14 @@ public class Indicacao {
 
     // Quem FEZ a indicação (o "fã")
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference("indicador-indicacoes")
     @JoinColumn(name = "indicador_id")
     private Membro indicador;
 
     // Quem RECEBEU a indicação (o "ídolo")
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonBackReference("indicado-indicacoes")   
     @JoinColumn(name = "indicado_id")
-    @JsonBackReference
     private Membro indicado;
 
     @CreationTimestamp

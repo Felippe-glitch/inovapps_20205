@@ -1,10 +1,10 @@
 package com.felippe.connection.Models;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,8 +34,8 @@ public class EmpresaHasMembro {
     @JoinColumn(name = "empresa_id", nullable = false)
     private Empresa empresa;
 
-    @ManyToOne
-    @JsonBackReference("membro-empresas")
+    @JsonBackReference("membro-empresas") 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "membro_id", nullable = false)
     private Membro membro;
 }

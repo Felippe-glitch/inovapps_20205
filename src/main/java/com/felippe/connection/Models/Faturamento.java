@@ -45,7 +45,7 @@ public class Faturamento {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_membro", nullable = false) 
-    @JsonBackReference
+    @JsonBackReference("membro-faturamentos")
     private Membro membro;
 
 }
