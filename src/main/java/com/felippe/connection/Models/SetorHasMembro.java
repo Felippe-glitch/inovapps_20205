@@ -1,7 +1,6 @@
 package com.felippe.connection.Models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Getter
@@ -33,8 +32,4 @@ public class SetorHasMembro {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "membro_id", nullable = false)
     private Membro membro;
-
-    @NotBlank(message = "O cargo não pode ser vazio.")
-    @Column(name = "cargo", nullable = false, length = 100)
-    private String cargo;
 }

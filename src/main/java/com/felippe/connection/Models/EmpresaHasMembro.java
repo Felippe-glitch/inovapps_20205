@@ -1,5 +1,8 @@
 package com.felippe.connection.Models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,7 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,10 +35,7 @@ public class EmpresaHasMembro {
     private Empresa empresa;
 
     @ManyToOne
+    @JsonBackReference("membro-empresas")
     @JoinColumn(name = "membro_id", nullable = false)
     private Membro membro;
-
-    @Column(name = "cargo_empresa", nullable = false)
-    @NotBlank
-    private String cargoEmpresa;
 }

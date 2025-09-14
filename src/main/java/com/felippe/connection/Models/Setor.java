@@ -31,8 +31,4 @@ public class Setor {
     @NotBlank
     private String nomeSetor;
 
-    @Column(name = "cnpj", unique = true, nullable = false, length = 14)
-    @NotBlank
-    private String cnpj;
-
 }

@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -28,6 +30,7 @@ public class Indicacao {
     // Quem RECEBEU a indicação (o "ídolo")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "indicado_id")
+    @JsonBackReference
     private Membro indicado;
 
     @CreationTimestamp

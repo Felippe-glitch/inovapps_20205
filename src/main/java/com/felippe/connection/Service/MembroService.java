@@ -1,5 +1,6 @@
 package com.felippe.connection.Service;
 
+import com.felippe.connection.DTO.EmpresaAssociacaoDTO;
 import com.felippe.connection.DTO.MembroDTO;
 import com.felippe.connection.Models.*;
 import com.felippe.connection.Models.ENUMS.MembroStatus;
@@ -119,6 +120,7 @@ public class MembroService {
 
         MarcaHasMembro novaAssociacao = new MarcaHasMembro();
         novaAssociacao.setMembro(membro);
+        // ✅ CORREÇÃO: Adicione esta linha para ligar a associação à marca.
         novaAssociacao.setMarca(marca);
 
         membro.getMarcasAssociadas().add(novaAssociacao);
@@ -128,11 +130,13 @@ public class MembroService {
     /**
      * Associa um membro a uma Empresa (que deve ser pré-cadastrada).
      */
+    // ...
+    // ...
     @Transactional
-    public void adicionarEmpresaAoMembro(Long membroId, Long empresaId) {
+    public void adicionarEmpresaAoMembro(Long membroId, EmpresaAssociacaoDTO dto) {
         Membro membro = buscarPorId(membroId);
-        Empresa empresa = empresaRepository.findById(empresaId)
-                .orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + empresaId));
+        Empresa empresa = empresaRepository.findById(dto.getEmpresaId())
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + dto.getEmpresaId()));
 
         if (empresaHasMembroRepository.existsByMembroAndEmpresa(membro, empresa)) {
             throw new IllegalArgumentException("Este membro já está associado a esta empresa.");
@@ -141,25 +145,40 @@ public class MembroService {
         EmpresaHasMembro novaAssociacao = new EmpresaHasMembro();
         novaAssociacao.setMembro(membro);
         novaAssociacao.setEmpresa(empresa);
+        // ✅ LINHA "novaAssociacao.setCargo(...)" REMOVIDA
 
         membro.getEmpresasAssociadas().add(novaAssociacao);
         membroRepository.save(membro);
     }
-    
+    // ...
+    // ...
+
+    /**
+     * Associa um membro a um Setor (que deve ser pré-cadastrado).
+     * ESTE É O MÉTODO CORRETO PARA USAR.
+     */
     @Transactional
     public void adicionarSetorAoMembro(Long membroId, Long setorId) {
+        // 1. Busca o membro que receberá a associação.
         Membro membro = buscarPorId(membroId);
+
+        // 2. BUSCA o setor que já existe no banco pelo ID.
+        // Ele NÃO cria um novo setor.
         Setor setor = setorRepository.findById(setorId)
                 .orElseThrow(() -> new RuntimeException("Setor não encontrado com ID: " + setorId));
 
+        // 3. Verifica se a associação já não foi feita.
         if (setorHasMembroRepository.existsByMembroAndSetor(membro, setor)) {
             throw new IllegalArgumentException("Este membro já está associado a este setor.");
         }
 
+        // 4. CRIA APENAS A ASSOCIAÇÃO na tabela 'setores_has_membros'.
         SetorHasMembro novaAssociacao = new SetorHasMembro();
         novaAssociacao.setMembro(membro);
-        novaAssociacao.setSetor(setor);
+        novaAssociacao.setSetor(setor); // Usa o setor que foi encontrado.
 
+        // 5. Adiciona a associação à lista do membro e salva.
+        // O JPA/Hibernate cuidará de inserir a linha na tabela de junção.
         membro.getSetoresAssociados().add(novaAssociacao);
         membroRepository.save(membro);
     }
@@ -202,7 +221,7 @@ public class MembroService {
         // Empresas (apenas associa)
         if (dto.getIdsEmpresas() != null) {
             for (Long empresaId : dto.getIdsEmpresas()) {
-                adicionarEmpresaAoMembro(membroSalvo.getId(), empresaId);
+                adicionarEmpresaAoMembro(membroSalvo.getId(), new EmpresaAssociacaoDTO(empresaId));
             }
         }
 
@@ -218,4 +237,5 @@ public class MembroService {
         // carregados
         return buscarPorId(membroSalvo.getId());
     }
+
 }

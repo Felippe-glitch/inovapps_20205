@@ -17,4 +17,7 @@ public interface SetorRepository extends JpaRepository<Setor, Long> {
     
     @Query("SELECT shm.membro FROM SetorHasMembro shm WHERE shm.setor.id = :setorId")
     List<Membro> findAllBySetorId(@Param("setorId") Long setorId);
+
+    Optional<Setor> findByNomeSetorIgnoreCase(String nomeSetor);
+
 }

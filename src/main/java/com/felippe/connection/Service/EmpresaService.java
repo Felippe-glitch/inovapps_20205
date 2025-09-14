@@ -29,6 +29,8 @@ public class EmpresaService {
         return empresaRepository.findAll(pageable);
     }
 
+    
+
     @Transactional(readOnly = true)
     public Empresa buscarPorId(Long id) {
         return empresaRepository.findById(id)

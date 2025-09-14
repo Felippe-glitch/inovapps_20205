@@ -10,6 +10,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,11 +30,13 @@ public class Contrato {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contratante_id", nullable = false)
+    @JsonBackReference("contrato-membro1") 
     private Membro membro1;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "contratado_id", nullable = false)
+    @JsonBackReference("contrato-membro2")
     private Membro membro2;
 
     @NotNull

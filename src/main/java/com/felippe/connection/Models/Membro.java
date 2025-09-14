@@ -1,5 +1,6 @@
 package com.felippe.connection.Models;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.felippe.connection.Models.ENUMS.MembroStatus;
 import com.felippe.connection.Models.ENUMS.MembroType;
@@ -110,22 +111,27 @@ public class Membro {
     // --- RELACIONAMENTOS COMPLETOS ---
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference("membro-marcas")
     private Set<MarcaHasMembro> marcasAssociadas = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference("membro-empresas")
     private Set<EmpresaHasMembro> empresasAssociadas = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Set<SetorHasMembro> setoresAssociados = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro1", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Set<Contrato> contratosComoContratante = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "membro2", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Set<Contrato> contratosComoContratado = new HashSet<>();
     
     @Builder.Default
@@ -134,11 +140,11 @@ public class Membro {
     
     @Builder.Default
     @OneToMany(mappedBy = "indicador", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Set<Indicacao> indicacoesFeitas = new HashSet<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "indicado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Set<Indicacao> indicacoesRecebidas = new HashSet<>();
-
-    
 }

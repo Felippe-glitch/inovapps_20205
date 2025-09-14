@@ -9,6 +9,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 /**
  * Entidade que representa o Faturamento de um Membro.
  *
@@ -43,6 +45,7 @@ public class Faturamento {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_membro", nullable = false) 
+    @JsonBackReference
     private Membro membro;
 
 }
