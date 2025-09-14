@@ -6,13 +6,10 @@ import com.felippe.connection.Models.*;
 import com.felippe.connection.Models.ENUMS.MembroStatus;
 import com.felippe.connection.Models.ENUMS.MembroType;
 import com.felippe.connection.Repository.*;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.List;
 
 @Service
@@ -29,8 +26,18 @@ public class MembroService {
     private final SetorHasMembroRepository setorHasMembroRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public MembroService(MembroRepository m, MarcaRepository ma, EmpresaRepository e, SetorRepository s, IndicacaoRepository i, MarcaHasMembroRepository mhm, EmpresaHasMembroRepository ehm, SetorHasMembroRepository shm, PasswordEncoder pe) {
-        this.membroRepository = m; this.marcaRepository = ma; this.empresaRepository = e; this.setorRepository = s; this.indicacaoRepository = i; this.marcaHasMembroRepository = mhm; this.empresaHasMembroRepository = ehm; this.setorHasMembroRepository = shm; this.passwordEncoder = pe;
+    public MembroService(MembroRepository m, MarcaRepository ma, EmpresaRepository e, SetorRepository s,
+            IndicacaoRepository i, MarcaHasMembroRepository mhm, EmpresaHasMembroRepository ehm,
+            SetorHasMembroRepository shm, PasswordEncoder pe) {
+        this.membroRepository = m;
+        this.marcaRepository = ma;
+        this.empresaRepository = e;
+        this.setorRepository = s;
+        this.indicacaoRepository = i;
+        this.marcaHasMembroRepository = mhm;
+        this.empresaHasMembroRepository = ehm;
+        this.setorHasMembroRepository = shm;
+        this.passwordEncoder = pe;
     }
 
     // --- OPERAÇÕES PÚBLICAS (A "API" DO SEU SERVICE) ---
@@ -43,10 +50,10 @@ public class MembroService {
         if (membroRepository.findByEmail(dto.getEmail()).isPresent()) {
             throw new IllegalArgumentException("O e-mail informado já está em uso.");
         }
-        
+
         Membro novoMembro = new Membro();
         mapearCreateDtoParaEntidade(dto, novoMembro); // Usa o método auxiliar
-        
+
         novoMembro.setSenha(passwordEncoder.encode(dto.getSenha()));
         novoMembro.setStatus(MembroStatus.ATIVO);
         novoMembro.setTipoMembro(MembroType.SOCIO);
@@ -63,10 +70,10 @@ public class MembroService {
         if (dto.getIdsSetores() != null) {
             dto.getIdsSetores().forEach(id -> adicionarSetorAoMembro(membroSalvo, id));
         }
-        
+
         return convertToResponseDTO(membroSalvo);
     }
-    
+
     /**
      * READ ALL: Busca todos os membros de forma paginada e retorna como DTO.
      */
@@ -76,7 +83,7 @@ public class MembroService {
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * READ ONE: Busca um perfil completo de membro e retorna como DTO.
      */
@@ -85,7 +92,6 @@ public class MembroService {
         Membro membro = buscarEntidadePorId(id);
         return convertToResponseDTO(membro);
     }
-    
 
     /**
      * DELETE: Deleta um membro pelo seu ID.
@@ -106,7 +112,8 @@ public class MembroService {
     }
 
     private void adicionarMarcaAoMembro(Membro membro, Long marcaId) {
-        Marca marca = marcaRepository.findById(marcaId).orElseThrow(() -> new RuntimeException("Marca não encontrada com ID: " + marcaId));
+        Marca marca = marcaRepository.findById(marcaId)
+                .orElseThrow(() -> new RuntimeException("Marca não encontrada com ID: " + marcaId));
         if (!marcaHasMembroRepository.existsByMembroAndMarca(membro, marca)) {
             MarcaHasMembro assoc = new MarcaHasMembro();
             assoc.setMembro(membro);
@@ -116,7 +123,8 @@ public class MembroService {
     }
 
     private void adicionarEmpresaAoMembro(Membro membro, Long empresaId) {
-        Empresa empresa = empresaRepository.findById(empresaId).orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + empresaId));
+        Empresa empresa = empresaRepository.findById(empresaId)
+                .orElseThrow(() -> new RuntimeException("Empresa não encontrada com ID: " + empresaId));
         if (!empresaHasMembroRepository.existsByMembroAndEmpresa(membro, empresa)) {
             EmpresaHasMembro assoc = new EmpresaHasMembro();
             assoc.setMembro(membro);
@@ -126,7 +134,8 @@ public class MembroService {
     }
 
     private void adicionarSetorAoMembro(Membro membro, Long setorId) {
-        Setor setor = setorRepository.findById(setorId).orElseThrow(() -> new RuntimeException("Setor não encontrado com ID: " + setorId));
+        Setor setor = setorRepository.findById(setorId)
+                .orElseThrow(() -> new RuntimeException("Setor não encontrado com ID: " + setorId));
         if (!setorHasMembroRepository.existsByMembroAndSetor(membro, setor)) {
             SetorHasMembro assoc = new SetorHasMembro();
             assoc.setMembro(membro);
@@ -173,12 +182,15 @@ public class MembroService {
         dto.setTipoMembro(membro.getTipoMembro());
         dto.setStatus(membro.getStatus());
         dto.setCriadoEm(membro.getCriadoEm());
-        
-        dto.setNomesMarcas(membro.getMarcasAssociadas().stream().map(m -> m.getMarca().getNome()).collect(Collectors.toList()));
-        dto.setNomesEmpresas(membro.getEmpresasAssociadas().stream().map(e -> e.getEmpresa().getNomeEmpresa()).collect(Collectors.toList()));
-        dto.setNomesSetores(membro.getSetoresAssociados().stream().map(s -> s.getSetor().getNomeSetor()).collect(Collectors.toList()));
+
+        dto.setNomesMarcas(
+                membro.getMarcasAssociadas().stream().map(m -> m.getMarca().getNome()).collect(Collectors.toList()));
+        dto.setNomesEmpresas(membro.getEmpresasAssociadas().stream().map(e -> e.getEmpresa().getNomeEmpresa())
+                .collect(Collectors.toList()));
+        dto.setNomesSetores(membro.getSetoresAssociados().stream().map(s -> s.getSetor().getNomeSetor())
+                .collect(Collectors.toList()));
         dto.setIndicacoesRecebidas(indicacaoRepository.countByIndicado(membro));
-        
+
         return dto;
     }
 }

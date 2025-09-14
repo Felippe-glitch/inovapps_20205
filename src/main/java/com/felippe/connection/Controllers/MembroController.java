@@ -32,7 +32,13 @@ public class MembroController {
         List<MembroResponseDTO> membrosDTO = membroService.listarTodos();
         return ResponseEntity.ok(membrosDTO);
     }
-    
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletarMembro(@PathVariable Long id) {
+        membroService.deletarMembro(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntimeException(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
