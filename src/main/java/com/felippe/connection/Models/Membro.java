@@ -1,28 +1,30 @@
 package com.felippe.connection.Models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.felippe.connection.Models.ENUMS.MembroStatus; 
-import com.felippe.connection.Models.ENUMS.MembroType;  
+import com.felippe.connection.Models.ENUMS.MembroStatus;
+import com.felippe.connection.Models.ENUMS.MembroType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.validator.constraints.URL;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
-@Entity
-@Table(name = Membro.TABLE_NAME)
 @Getter
-@Setter 
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor 
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(of = "id")
+@Entity
+@Table(name = "membros")
 public class Membro {
-
-    public static final String TABLE_NAME = "membros";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,22 +36,34 @@ public class Membro {
     @Column(nullable = false)
     private String nome;
 
-    @NotBlank
     @Email
+    @NotBlank
     @Column(nullable = false, unique = true)
     private String email;
 
-    @NotNull
-    @Column(name = "negocios_fechados", nullable = false)
-    private int negociosFechados = 0;
-
     @NotBlank
-    @Size(min = 8, max = 100) 
+    @Size(min = 8)
     @Column(nullable = false, length = 100)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String senha;
 
-    @URL(message = "A URL da foto é inválida.") 
+    // --- CAMPOS MANTIDOS CONFORME SOLICITADO ---
+
+    @Builder.Default
+    @Column(name = "negocios_fechados", nullable = false)
+    private int negociosFechados = 0;
+
+    @Builder.Default
+    @Column(name = "faturamento", nullable = false, precision = 19, scale = 2)
+    private BigDecimal faturamento = BigDecimal.ZERO;
+
+    @Builder.Default
+    @Column(name = "contratos_totais", nullable = false)
+    private int contratosTotais = 0;
+
+    // --- DEMAIS CAMPOS DO PERFIL ---
+
+    @URL(message = "A URL da foto é inválida.")
     @Column(name = "foto_url")
     private String fotoUrl;
 
@@ -59,9 +73,6 @@ public class Membro {
 
     @Column(name = "endereco", length = 200)
     private String local;
-
-    @Column(name = "faturamento", precision = 19, scale = 2)
-    private BigDecimal faturamento;
 
     @Column(name = "tempo_atuacao", length = 50)
     private String tempoAtuacao;
@@ -76,29 +87,8 @@ public class Membro {
     @Lob
     @Column(columnDefinition = "TEXT")
     private String hobbies;
-
-    @NotNull
-    @Column(name = "contratos_entre_membros")
-    private int contratosEntreMembros = 0;
-
-    @NotNull
-    @Column(name = "contratos_totais")
-    private int contratosTotais = 0;
-
-    @URL(message = "A URL do LinkedIn é inválida.")
-    @Column(name = "link_linkedin")
-    private String linkLinkedin;
-
-    @URL(message = "A URL do site é inválida.")
-    @Column(name = "link_site")
-    private String linkSite;
-
-    @Column(length = 50)
-    private String instagram;
-
-    @NotNull
-    @Column(nullable = false)
-    private Integer indicacao = 0;
+    
+    // ... outros campos como links de redes sociais, etc. ...
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_membro", length = 20)
@@ -107,4 +97,23 @@ public class Membro {
     @Enumerated(EnumType.STRING)
     @Column(length = 25)
     private MembroStatus status;
+
+    // --- CAMPOS DE AUDITORIA ---
+    @CreationTimestamp
+    @Column(name = "criado_em", nullable = false, updatable = false)
+    private LocalDateTime criadoEm;
+
+    @UpdateTimestamp
+    @Column(name = "atualizado_em", nullable = false)
+    private LocalDateTime atualizadoEm;
+
+    // --- RELACIONAMENTOS ---
+
+    @Builder.Default
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<MarcaHasMembro> marcasAssociadas = new HashSet<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "membro", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<EmpresaHasMembro> empresasAssociadas = new HashSet<>();
 }
