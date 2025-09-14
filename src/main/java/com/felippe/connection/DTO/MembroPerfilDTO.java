@@ -3,7 +3,6 @@ package com.felippe.connection.DTO;
 import com.felippe.connection.Models.ENUMS.MembroStatus;
 import com.felippe.connection.Models.ENUMS.MembroType;
 
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
