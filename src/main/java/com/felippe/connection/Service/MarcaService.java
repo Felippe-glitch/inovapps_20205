@@ -17,9 +17,6 @@ public class MarcaService {
         this.marcaRepository = marcaRepository;
     }
 
-    /**
-     * CREATE: Cria uma nova marca a partir de um DTO.
-     */
     @Transactional
     public Marca criarMarca(MarcaDTO marcaDTO) {
         if (marcaRepository.findByNomeIgnoreCase(marcaDTO.getNomeMarca()).isPresent()) {
@@ -30,13 +27,9 @@ public class MarcaService {
         return marcaRepository.save(novaMarca);
     }
 
-    /**
-     * READ ALL: Lista todas as marcas de forma paginada.
-     */
     @Transactional(readOnly = true)
     public Page<Marca> listarTodas(Pageable pageable) {
         return marcaRepository.findAll(pageable);
     }
     
-    // ... aqui você adicionaria os outros métodos de CRUD (buscarPorId, atualizar, deletar)
 }
