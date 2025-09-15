@@ -15,7 +15,6 @@ import java.util.List;
 @Service
 public class MembroService {
 
-    // --- DEPENDÊNCIAS (Injeção via construtor está correta) ---
     private final MembroRepository membroRepository;
     private final MarcaRepository marcaRepository;
     private final EmpresaRepository empresaRepository;
@@ -40,11 +39,6 @@ public class MembroService {
         this.passwordEncoder = pe;
     }
 
-    // --- OPERAÇÕES PÚBLICAS (A "API" DO SEU SERVICE) ---
-
-    /**
-     * CREATE: Cria um membro completo a partir de um DTO.
-     */
     @Transactional
     public MembroResponseDTO criarMembro(MembroDTO dto) {
         if (membroRepository.findByEmail(dto.getEmail()).isPresent()) {
@@ -52,7 +46,7 @@ public class MembroService {
         }
 
         Membro novoMembro = new Membro();
-        mapearCreateDtoParaEntidade(dto, novoMembro); // Usa o método auxiliar
+        mapearCreateDtoParaEntidade(dto, novoMembro); 
 
         novoMembro.setSenha(passwordEncoder.encode(dto.getSenha()));
         novoMembro.setStatus(MembroStatus.ATIVO);
@@ -60,7 +54,6 @@ public class MembroService {
 
         Membro membroSalvo = membroRepository.save(novoMembro);
 
-        // Associações
         if (dto.getIdsMarcas() != null) {
             dto.getIdsMarcas().forEach(id -> adicionarMarcaAoMembro(membroSalvo, id));
         }
@@ -74,9 +67,6 @@ public class MembroService {
         return convertToResponseDTO(membroSalvo);
     }
 
-    /**
-     * READ ALL: Busca todos os membros de forma paginada e retorna como DTO.
-     */
     @Transactional(readOnly = true)
     public List<MembroResponseDTO> listarTodos() {
         return membroRepository.findAll().stream()
@@ -84,18 +74,12 @@ public class MembroService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * READ ONE: Busca um perfil completo de membro e retorna como DTO.
-     */
     @Transactional(readOnly = true)
     public MembroResponseDTO buscarPerfilPorId(Long id) {
         Membro membro = buscarEntidadePorId(id);
         return convertToResponseDTO(membro);
     }
 
-    /**
-     * DELETE: Deleta um membro pelo seu ID.
-     */
     @Transactional
     public void deletarMembro(Long id) {
         if (!membroRepository.existsById(id)) {
@@ -104,7 +88,6 @@ public class MembroService {
         membroRepository.deleteById(id);
     }
 
-    // --- MÉTODOS AUXILIARES (PRIVADOS) ---
 
     private Membro buscarEntidadePorId(Long id) {
         return membroRepository.findById(id)
