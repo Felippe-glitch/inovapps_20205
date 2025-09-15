@@ -1,6 +1,6 @@
 package com.felippe.connection.Service;
 
-import com.felippe.connection.DTO.ContratoDTO; // Usaremos um DTO para entrada de dados
+import com.felippe.connection.DTO.ContratoDTO; 
 import com.felippe.connection.Models.Contrato;
 import com.felippe.connection.Models.Membro;
 import com.felippe.connection.Repository.ContratoRepository;
@@ -36,7 +36,6 @@ public class ContratoService {
             throw new IllegalArgumentException("Um membro não pode criar um contrato consigo mesmo.");
         }
 
-        // 3. Cria a entidade Contrato
         Contrato novoContrato = new Contrato();
         novoContrato.setMembro1(membro1);
         novoContrato.setMembro2(membro2);
@@ -46,10 +45,8 @@ public class ContratoService {
 
         Contrato contratoSalvo = contratoRepository.save(novoContrato);
 
-        // 4. ATUALIZA OS CONTADORES dos membros
         membro1.setContratosTotais(membro1.getContratosTotais() + 1);
         membro2.setContratosTotais(membro2.getContratosTotais() + 1);
-        // Supondo que "negociosFechados" também deva ser incrementado
         membro1.setNegociosFechados(membro1.getNegociosFechados() + 1);
         membro2.setNegociosFechados(membro2.getNegociosFechados() + 1);
 
